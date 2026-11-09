@@ -112,3 +112,58 @@ LEFT JOIN user_returns ur ON ur.user_id = f.user_id
 LEFT JOIN user_orders  uo ON uo.user_id = f.user_id
 GROUP BY f.first_channel
 ORDER BY users DESC;
+
+
+-- ---------------------------------------------------------------------
+-- Q3. Budget shift scenario: socialbook -> bsearch nonbrand
+-- ---------------------------------------------------------------------
+-- What it does: Takes the margin each channel earned in Q1, then asks:
+-- "If the sessions we bought on socialbook had earned what bsearch
+-- nonbrand earns per session, how much more margin would we have made?"
+--
+-- Why it matters: This turns the Q1 gap into a dollar number for the
+-- recommendation. Assumption: the same number of paid sessions can be
+-- bought on bsearch nonbrand at a similar cost per click (the dataset has
+-- no ad spend), so the result is a ceiling to test, not a promise.
+-- ---------------------------------------------------------------------
+WITH sess AS (
+    SELECT
+        website_session_id,
+        CASE
+            WHEN utm_source IS NOT NULL   THEN utm_source || ' ' || utm_campaign
+            WHEN http_referer IS NOT NULL THEN 'organic search'
+            ELSE 'direct type-in'
+        END AS channel
+    FROM toystore.website_sessions
+    WHERE created_at >= '2014-03-01'
+      AND created_at <  '2015-03-01'
+),
+refunds AS (
+    SELECT order_id, SUM(refund_amount_usd) AS refund_usd
+    FROM toystore.order_item_refunds
+    GROUP BY order_id
+),
+channel_margin AS (
+    SELECT
+        s.channel,
+        COUNT(*) AS sessions,
+        SUM(COALESCE(o.price_usd - o.cogs_usd - COALESCE(r.refund_usd, 0), 0)) AS margin_usd
+    FROM sess s
+    LEFT JOIN toystore.orders o ON o.website_session_id = s.website_session_id
+    LEFT JOIN refunds r         ON r.order_id = o.order_id
+    GROUP BY s.channel
+),
+target AS (
+    SELECT margin_usd / sessions AS margin_per_session
+    FROM channel_margin
+    WHERE channel = 'bsearch nonbrand'
+)
+SELECT
+    SUM(c.sessions)                                         AS social_sessions,
+    ROUND(SUM(c.margin_usd), 0)                             AS current_margin,
+    ROUND(SUM(c.sessions) * MAX(t.margin_per_session), 0)   AS margin_if_bsearch,
+    ROUND(SUM(c.sessions) * MAX(t.margin_per_session)
+          - SUM(c.margin_usd), 0)                           AS extra_margin
+FROM channel_margin c
+CROSS JOIN target t
+WHERE c.channel LIKE 'socialbook%';
