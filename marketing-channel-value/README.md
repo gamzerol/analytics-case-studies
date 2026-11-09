@@ -4,37 +4,31 @@
 **Tools:** SQL (PostgreSQL)
 
 ## Problem
-
-The marketing team buys traffic from paid search (gsearch, bsearch) and a social channel (socialbook). The data has no ad spend, so the question is: **how much is one visit from each channel actually worth, and which channel deserves less budget?**
+The store gets traffic from paid search (gsearch, bsearch) and a social channel (socialbook). **Which channel should get less budget?** The data has no ad spend, so I compared channels by gross margin per session. This number shows the most we can pay for one click without losing money (break-even CPC).
 
 ## Findings
-
-1. **Search pays ~$2.85–3.66 per visit; social pays $0.48–1.94.** Order value is the same everywhere (~$61). The gap comes only from conversion: search converts at 7.5–9.6%, socialbook desktop_targeted at 5.2% and the socialbook pilot at 1.1%.
-2. **Return visits don't change the picture.** About 15% of new visitors come back in every channel. Counting all later visits, a visitor first brought by search is worth ~$3.5–4.4, a visitor from socialbook ~$1.4–2.1.
-3. **Social is small but clearly the weakest spend.** It brings 2.7% of sessions and 1.6% of gross margin.
+1. **Search earns $2.85–3.66 per session, social earns $0.48–1.94.** Average order value is about $61 in all channels. The difference comes from conversion rate: 7.5–9.6% in search, 5.2% and 1.1% in social.
+2. **Returning visitors don't change the result.** About 15% of new visitors come back in every channel. When I count all their later visits, a visitor from search is worth $3.46–4.39 and a visitor from social is worth $1.43–2.13.
+3. **Social is a small channel:** 2.7% of sessions and 1.6% of gross margin.
 
 ![Break-even CPC by channel](images/chart1_break_even_cpc.png)
 ![Value per new visitor by first channel](images/chart2_value_per_customer.png)
 
 ## Financial Impact
-
-socialbook brought **6,830 sessions** that earned **$11.4k** in gross margin. The same number of sessions at bsearch nonbrand's margin per visit would earn **$19.9k**: **+$8.5k a year (+74%)** on that budget.
+Social brought **6,830 sessions** and **$11.4k** gross margin. If these sessions earned the same as bsearch nonbrand, the margin would be **$19.9k**. That is **$8.5k more per year (+74%)**.
 
 ![Budget shift scenario](images/chart3_reallocation_scenario.png)
 
 ## Recommendation
-
-1. **Stop the socialbook pilot.** A visit earns $0.48, about one-sixth of what a search visit earns.
-2. **Cap socialbook desktop_targeted bids at $1.94 per click** (its break-even point), or pause it.
-3. **Move the freed budget to bsearch nonbrand** and test it for 4–6 weeks. It earns the same per visit as gsearch nonbrand but gets 5× fewer sessions, so it likely has room to grow.
-4. **Use margin per session as the bid ceiling** for every paid channel going forward.
+1. **Stop the socialbook pilot.** One session earns only $0.48.
+2. **Keep socialbook targeted only if** the cost per click stays below $1.94.
+3. **Move the budget to bsearch nonbrand** and test it for 4–6 weeks. It earns the same per session as gsearch nonbrand but gets 5x less traffic.
+4. **Use margin per session as the max bid** for all paid channels.
 
 ## Assumptions & Limits
-
-- No ad spend in the data, so channels are judged by **break-even CPC** (gross margin per session) instead of an assumed cost. One session ≈ one paid click.
-- The scenario assumes bsearch nonbrand can absorb ~6.8k more sessions at a similar cost per click. Bigger budgets usually mean higher CPCs, so +$8.5k is a ceiling to test, not a promise.
-- Gross margin = price − product cost − refunds (refunds are not subtracted in the per-visitor view).
+- The data has no ad spend, so I assume one session = one paid click.
+- The +$8.5k assumes bsearch nonbrand can get about 6.8k more sessions at a similar cost per click. More budget usually means higher cost per click, so this needs to be tested.
+- Margin = price − product cost − refunds. In the per-visitor view (Q2) refunds are not subtracted.
 
 ---
-
 Queries: [`sql/channel_value.sql`](sql/channel_value.sql)

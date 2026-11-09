@@ -1,25 +1,11 @@
--- =====================================================================
--- Case Study: Where should the next marketing dollar go?
--- Dataset: Maven Toy Store (schema: toystore)
--- =====================================================================
+-- Where should the next marketing dollar go?
+-- Maven Toy Store data, schema: toystore
 
-
--- ---------------------------------------------------------------------
--- Q1. Channel performance (last 12 months: 2014-03-01 -> 2015-03-01)
--- ---------------------------------------------------------------------
--- What it does: Groups every session into a marketing channel and shows
--- how many sessions and orders each channel brought, the conversion rate,
--- and how much gross margin (price - cost - refunds) each session earned.
---
--- Why it matters: "margin_per_session" is the most a paid channel can pay
--- per click and still break even (break-even CPC). If a channel's real
--- cost per click is above this number, it loses money.
---
--- Channel rules:
---   utm_source filled            -> paid channel (source + campaign)
---   utm_source empty, referer set -> organic search (free)
---   both empty                   -> direct type-in (free)
--- ---------------------------------------------------------------------
+-- Q1. Channel performance (Mar 2014 - Mar 2015)
+-- Sessions, orders, conversion rate and gross margin per session for each channel.
+-- Margin per session = the most we can pay for one click without losing money (break-even CPC).
+-- Channels: utm_source filled = paid, only http_referer filled = organic search, both empty = direct.
+-- LEFT JOIN keeps sessions without an order, so conversion rate is correct.
 WITH sess AS (
     SELECT
         website_session_id,
@@ -52,22 +38,10 @@ GROUP BY s.channel
 ORDER BY sessions DESC;
 
 
--- ---------------------------------------------------------------------
--- Q2. Customer value by first-touch channel
--- ---------------------------------------------------------------------
--- What it does: Finds the channel that brought each visitor for the FIRST
--- time, then follows those visitors forward: did they come back, and how
--- many orders / how much margin did they generate in total (first visit
--- + every return visit)?
---
--- Why it matters: Q1 only credits the session that placed the order.
--- If paid search brings a visitor who later returns for free and buys,
--- Q1 gives that sale to "direct" or "organic". Q2 gives it back to the
--- channel that found the customer.
---
--- Window: first visits between 2014-03-01 and 2014-09-01, so every user
--- has at least ~6 months of follow-up before the data ends.
--- ---------------------------------------------------------------------
+-- Q2. Value per new visitor, by the channel of their first visit
+-- Q1 gives the order to the session that placed it. But a visitor can come from paid search
+-- first and buy later from direct or organic. Q2 gives all their orders to their first channel.
+-- Only first visits from Mar - Aug 2014, so every visitor has at least 6 months to come back.
 WITH sess AS (
     SELECT
         website_session_id,
@@ -114,18 +88,9 @@ GROUP BY f.first_channel
 ORDER BY users DESC;
 
 
--- ---------------------------------------------------------------------
--- Q3. Budget shift scenario: socialbook -> bsearch nonbrand
--- ---------------------------------------------------------------------
--- What it does: Takes the margin each channel earned in Q1, then asks:
--- "If the sessions we bought on socialbook had earned what bsearch
--- nonbrand earns per session, how much more margin would we have made?"
---
--- Why it matters: This turns the Q1 gap into a dollar number for the
--- recommendation. Assumption: the same number of paid sessions can be
--- bought on bsearch nonbrand at a similar cost per click (the dataset has
--- no ad spend), so the result is a ceiling to test, not a promise.
--- ---------------------------------------------------------------------
+-- Q3. What if the social sessions earned like bsearch nonbrand?
+-- Current social margin vs. the same number of sessions at bsearch nonbrand's margin per session.
+-- Assumption: we can buy the same number of sessions on bsearch nonbrand at a similar cost per click.
 WITH sess AS (
     SELECT
         website_session_id,
